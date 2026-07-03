@@ -11,10 +11,16 @@ namespace TheTravelingGirl.UI
     /// 对话框 UI 视图
     /// 订阅 DialogueRunner 的事件,显示说话人 + 台词文本
     /// 包含可选的打字机效果
+    ///
+    /// 设计要点:
+    ///   - runner 优先取 Inspector 引用,未设置时 FindFirstObjectByType 自动找
+    ///   - 事件订阅放在 OnEnable / 反订阅在 OnDisable,避免脚本禁用时回调泄漏
+    ///   - 打字机用 StringBuilder 累积,避免每帧字符串拼接产生 GC 分配
     /// </summary>
     public class DialogueBoxView : MonoBehaviour
     {
         [Header("References")]
+        [Tooltip("可选:未拖时会在 Awake 自动从场景里找 DialogueRunner")]
         [SerializeField] private DialogueRunner runner;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private TextMeshProUGUI speakerText;
@@ -26,18 +32,20 @@ namespace TheTravelingGirl.UI
         [SerializeField] private float charactersPerSecond = 30f;
 
         private Coroutine typewriterRoutine;
-        private StringBuilder textBuffer = new StringBuilder(256);
+        // 复用一个 StringBuilder,避免每次打字机重新分配
+        private readonly StringBuilder textBuffer = new StringBuilder(256);
 
         private void Awake()
         {
             if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
-            // runner 在 Inspector 没拖时,自动从场景里找
             if (runner == null) runner = FindFirstObjectByType<DialogueRunner>();
             Hide();
         }
 
         private void OnEnable()
         {
+            // 订阅事件。注意:OnEnable / OnDisable 配对,
+            // 防止脚本被禁用后 runner 仍回调到这里
             if (runner != null)
             {
                 runner.OnLineShown += HandleLineShown;
@@ -62,6 +70,7 @@ namespace TheTravelingGirl.UI
             if (canvasGroup != null) canvasGroup.alpha = 1f;
             if (speakerText != null) speakerText.text = line.speakerId ?? string.Empty;
 
+            // 打断上一次未完成的打字机,避免新句子被旧协程污染
             if (typewriterRoutine != null) StopCoroutine(typewriterRoutine);
             typewriterRoutine = null;
 

@@ -9,6 +9,11 @@ namespace TheTravelingGirl.Runtime
     /// 对话运行器
     /// 接收 Script,按顺序发出事件,由 UI 层订阅后渲染
     /// 不直接控制 UI —— 事件驱动,UI 可替换
+    ///
+    /// 设计取舍:
+    ///   - 用 events 不用 direct UI reference,UI 类可以独立测试 / 替换
+    ///   - Play() 把 State 切到 Dialogue,但 Stop() 不切回去
+    ///     —— 终止对话后可能回到 Title / Playing / 主菜单,调用方更清楚该切到哪
     /// </summary>
     public class DialogueRunner : MonoBehaviour
     {
@@ -21,22 +26,24 @@ namespace TheTravelingGirl.Runtime
                 ? CurrentScript.lines[CurrentLineIndex]
                 : null;
 
-        /// <summary>每句台词开始显示时触发</summary>
+        /// <summary>每句台词开始显示时触发。订阅者:UI 层 (DialogueBoxView 等)</summary>
         public event Action<DialogueLine> OnLineShown;
 
-        /// <summary>一段对话开始播放时触发</summary>
+        /// <summary>一段对话开始播放时触发。订阅者:游戏状态机 / 自动保存 / 统计</summary>
         public event Action OnSequenceStart;
 
-        /// <summary>一段对话播放完毕时触发</summary>
+        /// <summary>一段对话播放完毕时触发。订阅者:UI (隐藏对话框) / 自动推进</summary>
         public event Action OnSequenceEnd;
 
         private void Awake()
         {
+            // 注册到全局服务容器
             GameContext.DialogueRunner = this;
         }
 
         private void OnDestroy()
         {
+            // 只清自己 —— 避免销毁时把别人注册的 runner 也清掉
             if (GameContext.DialogueRunner == this) GameContext.DialogueRunner = null;
         }
 
@@ -75,7 +82,8 @@ namespace TheTravelingGirl.Runtime
         }
 
         /// <summary>
-        /// 强制终止当前对话
+        /// 强制终止当前对话。
+        /// 注意:不会改 GameContext.State —— 调用方决定回到 Title / Playing 等
         /// </summary>
         public void Stop()
         {
@@ -83,7 +91,6 @@ namespace TheTravelingGirl.Runtime
             CurrentScript = null;
             CurrentLineIndex = 0;
             OnSequenceEnd?.Invoke();
-            // 不主动改 State —— 由调用方决定回到 Title / Playing 等
         }
 
         private void EmitLine()
