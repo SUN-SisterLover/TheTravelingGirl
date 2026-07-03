@@ -10,9 +10,10 @@
   - `Config/*.cs`   → `TheTravelingGirl.Config`
 
 ## 目录职责
+- `Core/`     — 基础类型 (GameState 枚举) + 全局服务容器 (GameContext)
 - `Data/`     — 纯数据类 (POCO),无逻辑,无 MonoBehaviour
-- `Runtime/`  — MonoBehaviour,引擎胶水层
-- `UI/`       — uGUI 视图组件
+- `Runtime/`  — MonoBehaviour,引擎胶水层 (DialogueRunner)
+- `UI/`       — uGUI 视图组件 (DialogueBoxView)
 - `Save/`     — 存档序列化
 - `Config/`   — 玩家设置
 

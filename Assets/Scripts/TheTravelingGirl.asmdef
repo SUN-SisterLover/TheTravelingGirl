@@ -1,7 +1,7 @@
 {
     "name": "TheTravelingGirl",
     "rootNamespace": "TheTravelingGirl",
-    "references": [],
+    "references": ["Unity.TextMeshPro"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
