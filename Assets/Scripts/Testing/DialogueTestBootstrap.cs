@@ -42,18 +42,40 @@ namespace TheTravelingGirl.Testing
         private void Start()
         {
             var canvas = BuildCanvas();
+            Debug.Log("[DialogueTestBootstrap] Canvas built.");
             var (panel, speaker, body) = BuildDialoguePanel(canvas.transform);
             var runner = wireRunner ? BuildRunner() : null;
             AttachView(panel, speaker, body, runner);
+            Debug.Log("[DialogueTestBootstrap] UI + Runner wired.");
 
             if (runner != null)
             {
                 runner.Play(CreateTestScript());
+                Debug.Log("[DialogueTestBootstrap] Dialogue playing. 按 Space / Enter / 鼠标左键 推进。");
                 StartCoroutine(AdvanceOnInput(runner));
             }
             else
             {
                 Debug.LogWarning("[DialogueTestBootstrap] wireRunner = false, nothing to play.");
+            }
+        }
+
+        /// <summary>
+        /// 显式设 TMP 字体。AddComponent 创建的 TextMeshProUGUI font 默认为 null,
+        /// 不报错但完全不画字,场景看起来"啥都没有"
+        /// </summary>
+        private static void ConfigureFont(TextMeshProUGUI text, string role)
+        {
+            var font = TMP_Settings.defaultFontAsset;
+            if (font != null)
+            {
+                text.font = font;
+            }
+            else
+            {
+                Debug.LogError(
+                    $"[DialogueTestBootstrap] {role} 的 TMP 默认字体找不到! " +
+                    "请打开 Window > TextMeshPro > Import TMP Essential Resources 后重试。");
             }
         }
 
@@ -96,6 +118,7 @@ namespace TheTravelingGirl.Testing
             srt.sizeDelta = new Vector2(-40, 40);
 
             var speaker = speakerGo.AddComponent<TextMeshProUGUI>();
+            ConfigureFont(speaker, "SpeakerText");
             speaker.fontSize = 32;
             speaker.color = new Color(0.7f, 0.9f, 1f);
             speaker.fontStyle = FontStyles.Bold;
@@ -114,6 +137,7 @@ namespace TheTravelingGirl.Testing
             brt.offsetMax = new Vector2(-20, -50);
 
             var body = bodyGo.AddComponent<TextMeshProUGUI>();
+            ConfigureFont(body, "BodyText");
             body.fontSize = 28;
             body.color = Color.white;
             body.enableWordWrapping = true;
