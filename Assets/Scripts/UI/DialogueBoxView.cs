@@ -44,12 +44,23 @@ namespace TheTravelingGirl.UI
 
         private void OnEnable()
         {
+            // 兜底:Awake 时 FindFirstObjectByType 可能找不到 runner
+            // (GameManager 的 Awake 还没跑)。再从全局服务容器查一次
+            if (runner == null) runner = GameContext.DialogueRunner;
+
             // 订阅事件。注意:OnEnable / OnDisable 配对,
             // 防止脚本被禁用后 runner 仍回调到这里
             if (runner != null)
             {
                 runner.OnLineShown += HandleLineShown;
                 runner.OnSequenceEnd += HandleSequenceEnd;
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "[DialogueBoxView] runner 引用为空,无法订阅事件。" +
+                    "请在 Inspector 把 GameManager 拖到 Runner 字段," +
+                    "或确保场景里有挂了 DialogueRunner 的 GameObject。");
             }
         }
 
@@ -90,8 +101,9 @@ namespace TheTravelingGirl.UI
         {
             if (typewriterRoutine != null) StopCoroutine(typewriterRoutine);
             typewriterRoutine = null;
+            // 只关视觉 (alpha=0),不动 GameObject 的激活状态
+            // —— 否则 GameObject 不激活时 OnEnable 不跑,事件订阅就没了
             if (canvasGroup != null) canvasGroup.alpha = 0f;
-            gameObject.SetActive(false);
         }
 
         private void HandleLineShown(DialogueLine line) => Show(line);
