@@ -3,6 +3,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using TheTravelingGirl.Data;
+using TheTravelingGirl.Core;
 using TheTravelingGirl.Runtime;
 
 namespace TheTravelingGirl.UI
